@@ -1,5 +1,7 @@
 package com.example.midbosstimer
 
+import android.app.Application
+import android.content.Context
 import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,7 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
-
+import androidx.lifecycle.AndroidViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -88,7 +90,7 @@ fun formatTime(seconds: Int): String {
     return String.format("%02d:%02d", minutes, secs)
 }
 
-class TimerViewModel : ViewModel() {
+class TimerViewModel(application: Application) : AndroidViewModel(application) {
     private val _timerValue = MutableStateFlow(0)
     val timerValue: StateFlow<Int> get() = _timerValue
 
@@ -98,7 +100,10 @@ class TimerViewModel : ViewModel() {
     private val _selectedTimer = MutableStateFlow(0)
     val selectedTimer: StateFlow<Int> get() = _selectedTimer
 
-    private var mediaPlayer: MediaPlayer? = null
+
+    private val mediaPlayer: MediaPlayer by lazy{
+        MediaPlayer.create(getApplication(), R.raw.alert)
+    }
     private var countdownJob: Job? = null
 
     fun selectTimer(seconds: Int) {
@@ -141,12 +146,14 @@ class TimerViewModel : ViewModel() {
     }
 
     private fun playSound() {
-        mediaPlayer?.release()
-        //mediaPlayer = MediaPlayer.create(getApplication(), R.raw.alert_sound).apply { start() }
+        if (!mediaPlayer.isPlaying){
+            mediaPlayer.start()
+        }
     }
 
     override fun onCleared() {
         super.onCleared()
+        countdownJob?.cancel()
         mediaPlayer?.release()
     }
 }
